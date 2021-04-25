@@ -1,8 +1,10 @@
 import {Router as router} from 'express';
 import todosRoute from './todos';
 
-const route = router();
+export default (middleware) => {
+  const route = router();
 
-route.use('/todos', todosRoute);
+  route.use('/todos', middleware.auth, todosRoute);
 
-export default route;
+  return route;
+};

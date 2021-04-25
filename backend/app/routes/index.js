@@ -1,10 +1,10 @@
 import {Router as router} from 'express';
 import webRoute from './web';
 
-export default (app) => {
+export default (app, middleware) => {
   const route = router();
 
-  route.use('/', webRoute);
+  route.use('/', webRoute(middleware));
 
   app.use('/api/', route);
 };
