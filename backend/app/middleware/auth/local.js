@@ -1,35 +1,79 @@
-import passport from 'passport';
+import {compareSync, genSaltSync, hashSync} from 'bcrypt-nodejs';
 import {Strategy} from 'passport-local';
-import flash from 'connect-flash';
 import model from '../../models';
 
 const {User} = model;
 
-export default (app) => {
-  passport.use(new Strategy(
-      async (username, password, done) => {
-        try {
-          const user = await User.findOne({
-            where: {
-              username,
-              password,
-            },
-          });
+export default (passport) => {
+  passport.use('local-signup', new Strategy({
+    usernameField: 'username',
+    passwordField: 'password',
+    passReqToCallback: true,
+  },
+  async (req, username, password, done) => {
+    try {
+      const user = await User.findOne({
+        where: {
+          username,
+        },
+      });
 
-          if (user) {
-            return done(null, user);
-          } else {
-            return done(null, false, {message: 'Wrong username or password'});
-          }
-        } catch (err) {
-          return done(err);
+      if (user) {
+        return done(null, false, {
+          message: 'That username is already taken',
+        });
+      } else {
+        const userPassword = hashSync(
+            password,
+            genSaltSync(8),
+            null);
+
+        const newUser = await User.create({
+          username,
+          password: userPassword,
+        });
+
+        if (newUser) {
+          return done(null, newUser);
+        } else {
+          return done(null, false);
         }
-      },
-  ));
+      }
+    } catch (err) {
+      return done(err);
+    }
+  }));
 
-  app.use(passport.initialize());
-  app.use(passport.session());
-  app.use(flash());
+  passport.use('local-signin', new Strategy({
+    usernameField: 'username',
+    passwordField: 'password',
+    passReqToCallback: true,
+  },
+  async (req, username, password, done) => {
+    try {
+      const user = await User.findOne({
+        where: {
+          username,
+        },
+      });
+
+      if (!user) {
+        return done(null, false, {
+          message: 'Username or Password is wrong',
+        });
+      }
+
+      if (!compareSync(password, user.password)) {
+        return done(null, false, {
+          message: 'Username or Password is wrong',
+        });
+      }
+
+      return done(null, user);
+    } catch (err) {
+      done(err);
+    }
+  }));
 
   passport.serializeUser((user, done) => {
     done(null, user.id);
@@ -43,9 +87,5 @@ export default (app) => {
     } catch (err) {
       return done(err);
     }
-  });
-
-  return passport.authenticate('local', {
-    failureRedirect: '/login',
   });
 };

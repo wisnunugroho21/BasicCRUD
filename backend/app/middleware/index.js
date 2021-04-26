@@ -1,7 +1,7 @@
 import localAuth from './auth/local';
 
-export default (app) => {
+export default (app, passport) => {
   return {
-    auth: localAuth(app),
+    auth: localAuth(passport),
   };
 };
