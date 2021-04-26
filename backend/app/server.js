@@ -25,10 +25,8 @@ app.use(passport.session());
 const port = parseInt(process.env.PORT, 10) || 8000;
 app.set('port', port);
 
-registerMiddleware(app, passport);
-registerRoute(app, {
-  auth: passport,
-});
+const mw = registerMiddleware(app, passport);
+registerRoute(app, mw);
 
 const server = createServer(app);
 server.listen(port);

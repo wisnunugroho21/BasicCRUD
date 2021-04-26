@@ -88,4 +88,6 @@ export default (passport) => {
       return done(err);
     }
   });
+
+  return passport;
 };
